@@ -20,7 +20,8 @@ module rcu (
     output logic aud_rst_n_o,
     output logic rtc_clk_o,
     output logic rtc_rst_n_o,
-    output logic test_clk_o
+    output logic test_clk1_o,
+    output logic test_clk2_o
 );
 
 endmodule
