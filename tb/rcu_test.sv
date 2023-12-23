@@ -8,8 +8,8 @@
 // MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
 // See the Mulan PSL v2 for more details.
 
-`ifndef INC_PWM_TEST_SV
-`define INC_PWM_TEST_SV
+`ifndef INC_RCU_TEST_SV
+`define INC_RCU_TEST_SV
 
 `include "apb4_master.sv"
 `include "rcu_define.sv"

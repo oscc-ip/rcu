@@ -10,9 +10,14 @@
 
 `include "register.sv"
 `include "rst_sync.sv"
+`include "pll.sv"
+`include "clk_int_div.sv"
 `include "rcu_define.sv"
 
-
+// core: 200M -> 800M
+// apb: 100M
+// rtc: 32.768K
+// vga: 200M
 module apb4_rcu (
     apb4_if.slave apb4,
     rcu_if.dut    rcu
@@ -22,6 +27,7 @@ module apb4_rcu (
   logic [`RCU_CTRL_WIDTH-1:0] s_rcu_ctrl_d, s_rcu_ctrl_q;
   logic [`RCU_STAT_WIDTH-1:0] s_rcu_stat_d, s_rcu_stat_q;
   logic [1:0] s_bit_tclk;
+  logic       s_bit_pllstrb;
   logic s_pll_clk, s_core_clk, s_sys_rstn;
 
   assign s_apb4_addr = apb4.paddr[5:2];
@@ -31,7 +37,6 @@ module apb4_rcu (
   assign apb4.pslverr = 1'b0;
 
   assign s_bit_tclk = s_rcu_ctrl_q[1:0];
-
   assign s_rcu_ctrl_d = (s_apb4_wr_hdshk && s_apb4_addr == `RCU_CTRL) ? apb4.pwdata[`RCU_CTRL_WIDTH-1:0] : s_rcu_ctrl_q;
   dffr #(`RCU_CTRL_WIDTH) u_rcu_ctrl_dffr (
       apb4.pclk,
@@ -40,6 +45,10 @@ module apb4_rcu (
       s_rcu_ctrl_q
   );
 
+  always_comb begin
+    s_rcu_stat_d    = s_rcu_stat_q;
+    s_rcu_stat_d[0] = s_bit_pllstrb;
+  end
   dffr #(`RCU_STAT_WIDTH) u_rcu_stat_dffr (
       apb4.pclk,
       apb4.presetn,
@@ -58,7 +67,7 @@ module apb4_rcu (
     end
   end
 
-  assign s_core_clk     = rcu.pll_en_i ? s_pll_clk : ext_hfosc_clk_i;
+  assign s_core_clk     = rcu.pll_en_i ? s_pll_clk : rcu.ext_hfosc_clk_i;
   assign rcu.core_clk_o = s_core_clk;
   assign rcu.rtc_clk_o  = rcu.ext_lfosc_clk_i;
   assign rcu.aud_clk_o  = rcu.ext_audosc_clk_i;
@@ -83,8 +92,35 @@ module apb4_rcu (
       rcu.aud_rst_n_o
   );
 
+
+  // USER CUSTOM AREA START
+
   // clock gen
-  
+  tech_pll u_tech_pll (
+      .fref_i    (rcu.ext_hfosc_clk_i),
+      .refdiv_i  (),
+      .fbdiv_i   (),
+      .postdiv1_i(),
+      .postdiv2_i(),
+      .pll_lock_o(s_bit_pllstrb),
+      .pll_clk_o (s_pll_clk)
+  );
+
+  // USER CUSTOM AREA END
+
+  // core 4div
+  clk_int_even_div_simple #(
+      .DIV_VALUE_WIDTH (3),
+      .DONE_DELAY_WIDTH(3)
+  ) u_clk_int_even_div_simple (
+      .clk_i      (s_core_clk),
+      .rst_n_i    (apb4.presetn),
+      .div_i      (3'd4),
+      .div_valid_i(1'b1),
+      .div_ready_o(),
+      .div_done_o (),
+      .clk_o      (s_core_4div)
+  );
 
   // clock out
   always_comb begin
