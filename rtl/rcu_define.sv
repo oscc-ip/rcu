@@ -16,12 +16,12 @@
  * BITS:   | 31:2 | 1:0  |
  * FIELDS: | RES  | TCLK |
  * PERMS:  | NONE | RW   |
- * ----------------------------
+ * --------------------------
  * RCU_STAT:
  * BITS:   | 31:1 | 0       |
  * FIELDS: | RES  | PLLSTRB |
  * PERMS:  | NONE | R       |
- * -------------------------------
+ * --------------------------
 */
 
 // verilog_format: off
@@ -40,11 +40,9 @@
 `define TCLK_AUDOSC    2'b10
 `define TCLK_CORE_4DIV 2'b11
 
-
 // [100M -> 800M]
 `define RCU_CLK_CFG_WIDTH  3
 `define RCU_CORE_SEL_WIDTH 5
-
 // verilog_format: on
 
 interface rcu_if ();

@@ -25,22 +25,26 @@ module apb4_rcu (
 
   logic [3:0] s_apb4_addr;
   logic [`RCU_CTRL_WIDTH-1:0] s_rcu_ctrl_d, s_rcu_ctrl_q;
+  logic s_rcu_ctrl_en;
   logic [`RCU_STAT_WIDTH-1:0] s_rcu_stat_d, s_rcu_stat_q;
   logic [1:0] s_bit_tclk;
   logic       s_bit_pllstrb;
   logic s_pll_clk, s_core_clk, s_sys_rstn;
 
-  assign s_apb4_addr = apb4.paddr[5:2];
+  assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
   assign s_apb4_rd_hdshk = apb4.psel && apb4.penable && (~apb4.pwrite);
-  assign apb4.pready = 1'b1;
-  assign apb4.pslverr = 1'b0;
+  assign apb4.pready     = 1'b1;
+  assign apb4.pslverr    = 1'b0;
 
-  assign s_bit_tclk = s_rcu_ctrl_q[1:0];
-  assign s_rcu_ctrl_d = (s_apb4_wr_hdshk && s_apb4_addr == `RCU_CTRL) ? apb4.pwdata[`RCU_CTRL_WIDTH-1:0] : s_rcu_ctrl_q;
-  dffr #(`RCU_CTRL_WIDTH) u_rcu_ctrl_dffr (
+  assign s_bit_tclk      = s_rcu_ctrl_q[1:0];
+
+  assign s_rcu_ctrl_en   = s_apb4_wr_hdshk && s_apb4_addr == `RCU_CTRL;
+  assign s_rcu_ctrl_d    = s_rcu_ctrl_en ? apb4.pwdata[`RCU_CTRL_WIDTH-1:0] : s_rcu_ctrl_q;
+  dffer #(`RCU_CTRL_WIDTH) u_rcu_ctrl_dffer (
       apb4.pclk,
       apb4.presetn,
+      s_rcu_ctrl_en,
       s_rcu_ctrl_d,
       s_rcu_ctrl_q
   );
@@ -91,7 +95,6 @@ module apb4_rcu (
       s_sys_rstn,
       rcu.aud_rst_n_o
   );
-
 
   // USER CUSTOM AREA START
 
