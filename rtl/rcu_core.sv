@@ -1,0 +1,26 @@
+// Copyright (c) 2023 Beijing Institute of Open Source Chip
+// rcu is licensed under Mulan PSL v2.
+// You can use this software according to the terms and conditions of the Mulan PSL v2.
+// You may obtain a copy of Mulan PSL v2 at:
+//             http://license.coscl.org.cn/MulanPSL2
+// THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+// EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+// MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+// See the Mulan PSL v2 for more details.
+
+`include "rcu_define.sv"
+
+// ====== USER CUSTOM CONTENT
+module rcu_core (
+    input  logic                          ref_clk_i,
+    input  logic [`RCU_CLK_CFG_WIDTH-1:0] clk_cfg_i,
+    output logic                          pll_lock_o,
+    output logic                          pll_clk_o,
+    output logic                          hf_peri_clk_o
+);
+
+
+  // clock gen
+  //   tech_pll u_tech_pll ();
+
+endmodule

@@ -34,7 +34,7 @@ module apb4_rcu (
   logic       s_bit_pllstrb;
 
   logic s_ext_lfosc_clk_buf, s_ext_hfosc_clk_buf, s_ext_audosc_clk_buf;
-  logic s_pll_clk, s_core_clk, s_rtc_clk, s_sys_rstn;
+  logic s_pll_clk, s_hf_peri_clk, s_rtc_clk, s_sys_rstn;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -88,20 +88,17 @@ module apb4_rcu (
 
   // gen clock and reset signal
   // verilog_format: off
-  clk_buf u_ext_lfosc_clk_buf (.clk_i(rcu.ext_lfosc_clk_i), .clk_o(s_ext_lfosc_clk_buf));
-  clk_buf u_ext_hfosc_clk_buf (.clk_i(rcu.ext_hfosc_clk_i), .clk_o(s_ext_hfosc_clk_buf));
-  clk_buf u_ext_audosc_clk_buf (.clk_i(rcu.ext_audosc_clk_i), .clk_o(s_ext_audosc_clk_buf));
+  clk_buf u_ext_lfosc_clk_buf     (.clk_i(rcu.ext_lfosc_clk_i), .clk_o(s_ext_lfosc_clk_buf));
+  clk_buf u_ext_hfosc_clk_buf     (.clk_i(rcu.ext_hfosc_clk_i), .clk_o(s_ext_hfosc_clk_buf));
+  clk_buf u_ext_audosc_clk_buf    (.clk_i(rcu.ext_audosc_clk_i), .clk_o(s_ext_audosc_clk_buf));
+  clk_mux2 u_core_clk_clk_mux2    (.clk_o(rcu.clk_o[`RCU_CORE_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_pll_clk), .en_i(rcu.pll_en_i));
+  clk_mux2 u_lf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_LF_PERI_CLK]), .clk1_i(s_core_4div), .clk2_i(s_ext_lfosc_clk_buf), .en_i(rcu.pll_en_i));
+  clk_mux2 u_hf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_HF_PERI_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_hf_peri_clk), .en_i(rcu.pll_en_i));
   // verilog_format: on
-
-  assign s_core_clk                  = rcu.pll_en_i ? s_pll_clk : s_ext_lfosc_clk_buf;
-  assign rcu.clk_o[`RCU_CORE_CLK]    = s_core_clk;
-  assign rcu.clk_o[`RCU_BYPASS_CLK]  = s_ext_lfosc_clk_buf;
-  assign rcu.clk_o[`RCU_LF_PERI_CLK] = rcu.pll_en_i ? s_ext_lfosc_clk_buf: s_core_4div;
-  assign rcu.clk_o[`RCU_HF_PERI_CLK] = rcu.pll_en_i ? '0: s_ext_lfosc_clk_buf; // TODO:
-  assign rcu.clk_o[`RCU_AUD_CLK]     = rcu.ext_audosc_clk_i;
-  assign rcu.clk_o[`RCU_RTC_CLK]     = s_rtc_clk;
-
-  assign s_sys_rstn                  = rcu.ext_rst_n_i | rcu.wdt_rst_n_i;
+  assign rcu.clk_o[`RCU_BYPASS_CLK] = s_ext_lfosc_clk_buf;
+  assign rcu.clk_o[`RCU_AUD_CLK]    = rcu.ext_audosc_clk_i;
+  assign rcu.clk_o[`RCU_RTC_CLK]    = s_rtc_clk;
+  assign s_sys_rstn                 = rcu.ext_rst_n_i | rcu.wdt_rst_n_i;
   for (genvar i = 0; i < 6; i++) begin : RCU_RST_BLOCK
     rst_sync #(3) u__rst_sync (
         rcu.clk_o[i],
@@ -110,20 +107,13 @@ module apb4_rcu (
     );
   end
 
-  // ====== USER CUSTOM AREA START ======
-
-  // clock gen
-  tech_pll u_tech_pll (
-      .fref_i    (s_ext_lfosc_clk_buf),
-      .refdiv_i  (),
-      .fbdiv_i   (),
-      .postdiv1_i(),
-      .postdiv2_i(),
-      .pll_lock_o(s_bit_pllstrb),
-      .pll_clk_o (s_pll_clk)
+  rcu_core u_rcu_core (
+      .ref_clk_i    (s_ext_lfosc_clk_buf),
+      .clk_cfg_i    (rcu.clk_cfg_i),
+      .pll_lock_o   (s_bit_pllstrb),
+      .pll_clk_o    (s_pll_clk),
+      .hf_peri_clk_o(s_hf_peri_clk)
   );
-
-  // ====== USER CUSTOM AREA END ======
 
   // rtc div
   clk_int_even_div_simple #(

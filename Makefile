@@ -15,6 +15,7 @@ SIM_OPTIONS  := -full64 -debug_acc+all  +v2k -sverilog -timescale=1ns/10ps \
 
 SRC_FILE ?=
 SRC_FILE += ../rtl/apb4_rcu.sv
+SRC_FILE += ../rtl/rcu_core.sv
 SRC_FILE += ../tb/rcu_test.sv
 SRC_FILE += ../tb/test_top.sv
 SRC_FILE += ../tb/apb4_rcu_tb.sv
