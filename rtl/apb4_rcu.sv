@@ -16,8 +16,9 @@
 `include "rcu_define.sv"
 
 // core: 100M -> 800M
-// apb: 100M
-// rtc: 10K
+// peri: 100M
+// aud:  12288K
+// rtc:  10K
 module apb4_rcu (
     apb4_if.slave apb4,
     rcu_if.dut    rcu
@@ -32,7 +33,7 @@ module apb4_rcu (
   logic [1:0] s_bit_tclk;
   logic       s_bit_pllstrb;
 
-  logic s_ext_hfosc_clk_buf, s_ext_lfosc_clk_buf, s_ext_audosc_clk_buf;
+  logic s_ext_lfosc_clk_buf, s_ext_hfosc_clk_buf, s_ext_audosc_clk_buf;
   logic s_pll_clk, s_core_clk, s_rtc_clk, s_sys_rstn;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
@@ -87,16 +88,16 @@ module apb4_rcu (
 
   // gen clock and reset signal
   // verilog_format: off
-  clk_buf u_ext_hfosc_clk_buf (.clk_i(rcu.ext_hfosc_clk_i), .clk_o(s_ext_hfosc_clk_buf));
   clk_buf u_ext_lfosc_clk_buf (.clk_i(rcu.ext_lfosc_clk_i), .clk_o(s_ext_lfosc_clk_buf));
+  clk_buf u_ext_hfosc_clk_buf (.clk_i(rcu.ext_hfosc_clk_i), .clk_o(s_ext_hfosc_clk_buf));
   clk_buf u_ext_audosc_clk_buf (.clk_i(rcu.ext_audosc_clk_i), .clk_o(s_ext_audosc_clk_buf));
   // verilog_format: on
 
-  assign s_core_clk                  = rcu.pll_en_i ? s_pll_clk : rcu.ext_hfosc_clk_i;
+  assign s_core_clk                  = rcu.pll_en_i ? s_pll_clk : s_ext_lfosc_clk_buf;
   assign rcu.clk_o[`RCU_CORE_CLK]    = s_core_clk;
   assign rcu.clk_o[`RCU_BYPASS_CLK]  = s_ext_lfosc_clk_buf;
-  assign rcu.clk_o[`RCU_LF_PERI_CLK] = s_ext_lfosc_clk_buf;
-  assign rcu.clk_o[`RCU_HF_PERI_CLK] = '0; // TODO:
+  assign rcu.clk_o[`RCU_LF_PERI_CLK] = rcu.pll_en_i ? s_ext_lfosc_clk_buf: s_core_4div;
+  assign rcu.clk_o[`RCU_HF_PERI_CLK] = rcu.pll_en_i ? '0: s_ext_lfosc_clk_buf; // TODO:
   assign rcu.clk_o[`RCU_AUD_CLK]     = rcu.ext_audosc_clk_i;
   assign rcu.clk_o[`RCU_RTC_CLK]     = s_rtc_clk;
 
@@ -109,7 +110,7 @@ module apb4_rcu (
     );
   end
 
-  // USER CUSTOM AREA START
+  // ====== USER CUSTOM AREA START ======
 
   // clock gen
   tech_pll u_tech_pll (
@@ -122,9 +123,9 @@ module apb4_rcu (
       .pll_clk_o (s_pll_clk)
   );
 
-  // USER CUSTOM AREA END
+  // ====== USER CUSTOM AREA END ======
 
-  // core 4div
+  // rtc div
   clk_int_even_div_simple #(
       .DIV_VALUE_WIDTH (`RCU_RDIV_WIDTH),
       .DONE_DELAY_WIDTH(3)

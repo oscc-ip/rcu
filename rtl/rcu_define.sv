@@ -62,11 +62,11 @@
 `define RCU_TEST_CLK    6'd6
 // verilog_format: on
 
-`define RCU_RDIV_MIN_VAL  {{(`RCU_RDIV_WIDTH-2){1'b0}}, 2'd2}
+`define RCU_RDIV_MIN_VAL {{(`RCU_RDIV_WIDTH-2){1'b0}}, 2'd2}
 
 interface rcu_if ();
-  logic                           ext_hfosc_clk_i;
   logic                           ext_lfosc_clk_i;
+  logic                           ext_hfosc_clk_i;
   logic                           ext_audosc_clk_i;
   logic                           ext_rst_n_i;
   logic                           wdt_rst_n_i;
@@ -77,8 +77,8 @@ interface rcu_if ();
   logic [`RCU_CLK_MODE_WIDTH-1:0] rst_n_o;
 
   modport dut(
-      input ext_hfosc_clk_i,
       input ext_lfosc_clk_i,
+      input ext_hfosc_clk_i,
       input ext_audosc_clk_i,
       input ext_rst_n_i,
       input wdt_rst_n_i,
@@ -90,8 +90,8 @@ interface rcu_if ();
   );
 
   modport tb(
-      output ext_hfosc_clk_i,
       output ext_lfosc_clk_i,
+      output ext_hfosc_clk_i,
       output ext_audosc_clk_i,
       output ext_rst_n_i,
       output wdt_rst_n_i,
