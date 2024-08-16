@@ -34,8 +34,8 @@ module apb4_rcu (
   logic       s_bit_pllstrb;
 
   logic s_ext_lfosc_clk_buf, s_ext_hfosc_clk_buf, s_ext_audosc_clk_buf;
-  logic s_pll_clk, s_hf_peri_clk, s_rtc_trg, s_rtc_clk_d, s_rtc_clk_q, s_sys_rstn;
-  logic s_core_4div_trg, s_core_4div_d, s_core_4div_q;
+  logic s_pll_clk, s_hf_peri_clk, s_rtc_trg, s_rtc_clk, s_sys_rstn;
+  logic s_core_4div_trg, s_core_4div;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -93,12 +93,12 @@ module apb4_rcu (
   clk_buf u_ext_hfosc_clk_buf     (.clk_i(rcu.ext_hfosc_clk_i), .clk_o(s_ext_hfosc_clk_buf));
   clk_buf u_ext_audosc_clk_buf    (.clk_i(rcu.ext_audosc_clk_i), .clk_o(s_ext_audosc_clk_buf));
   clk_mux2 u_core_clk_clk_mux2    (.clk_o(rcu.clk_o[`RCU_CORE_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_pll_clk), .en_i(rcu.pll_en_i));
-  clk_mux2 u_lf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_LF_PERI_CLK]), .clk1_i(s_core_4div_q), .clk2_i(s_ext_lfosc_clk_buf), .en_i(rcu.pll_en_i));
+  clk_mux2 u_lf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_LF_PERI_CLK]), .clk1_i(s_core_4div), .clk2_i(s_ext_lfosc_clk_buf), .en_i(rcu.pll_en_i));
   clk_mux2 u_hf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_HF_PERI_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_hf_peri_clk), .en_i(rcu.pll_en_i));
   // verilog_format: on
   assign rcu.clk_o[`RCU_BYPASS_CLK] = s_ext_lfosc_clk_buf;
   assign rcu.clk_o[`RCU_AUD_CLK]    = rcu.ext_audosc_clk_i;
-  assign rcu.clk_o[`RCU_RTC_CLK]    = s_rtc_clk_q;
+  assign rcu.clk_o[`RCU_RTC_CLK]    = s_rtc_clk;
   assign s_sys_rstn                 = rcu.ext_rst_n_i | rcu.wdt_rst_n_i;
   for (genvar i = 0; i < 6; i++) begin : RCU_RST_BLOCK
     rst_sync #(3) u__rst_sync (
@@ -124,19 +124,11 @@ module apb4_rcu (
       .clk_i      (rcu.clk_o[`RCU_AUD_CLK]),
       .rst_n_i    (rcu.rst_n_o[`RCU_AUD_CLK]),
       .div_i      (s_rcu_rdiv_q),
-      .div_valid_i(1'b1),
+      .div_valid_i(s_rcu_rdiv_en),
       .div_ready_o(),
       .div_done_o (),
-      .clk_trg_o  (s_rtc_trg)
-  );
-
-  assign s_rtc_clk_d = ~s_rtc_clk_q;
-  dffer #(1) u_rtc_clk_dffer (
-      rcu.clk_o[`RCU_AUD_CLK],
-      rcu.rst_n_o[`RCU_AUD_CLK],
-      s_rtc_trg,
-      s_rtc_clk_d,
-      s_rtc_clk_q
+      .clk_trg_o  (s_rtc_trg),
+      .clk_o      (s_rtc_clk)
   );
 
   // core 4div
@@ -147,19 +139,11 @@ module apb4_rcu (
       .clk_i      (rcu.clk_o[`RCU_CORE_CLK]),
       .rst_n_i    (rcu.rst_n_o[`RCU_CORE_CLK]),
       .div_i      (3'd3),
-      .div_valid_i(1'b1),
+      .div_valid_i(1'b0),
       .div_ready_o(),
       .div_done_o (),
-      .clk_trg_o  (s_core_4div_trg)
-  );
-
-  assign s_core_4div_d = ~s_core_4div_q;
-  dffer #(1) u_core_4div_dffer (
-      rcu.clk_o[`RCU_CORE_CLK],
-      rcu.rst_n_o[`RCU_CORE_CLK],
-      s_core_4div_trg,
-      s_core_4div_d,
-      s_core_4div_q
+      .clk_trg_o  (s_core_4div_trg),
+      .clk_o      (s_core_4div)
   );
 
   // clock out
@@ -169,7 +153,7 @@ module apb4_rcu (
       `TCLK_LFOSC:     rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_lfosc_clk_i;
       `TCLK_HFOSC:     rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_hfosc_clk_i;
       `TCLK_AUDOSC:    rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_audosc_clk_i;
-      `TCLK_CORE_4DIV: rcu.clk_o[`RCU_TEST_CLK] = s_core_4div_q;
+      `TCLK_CORE_4DIV: rcu.clk_o[`RCU_TEST_CLK] = s_core_4div;
       default:         rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_lfosc_clk_i;
     endcase
   end
