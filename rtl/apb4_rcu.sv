@@ -127,6 +127,7 @@ module apb4_rcu (
       .div_valid_i(s_rcu_rdiv_en),
       .div_ready_o(),
       .div_done_o (),
+      .clk_cnt_o  (),
       .clk_trg_o  (s_rtc_trg),
       .clk_o      (s_rtc_clk)
   );
