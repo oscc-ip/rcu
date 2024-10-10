@@ -13,6 +13,7 @@
 // ====== USER CUSTOM CONTENT
 module rcu_core (
     input  logic                          ref_clk_i,
+    input  logic                          pll_en_i,
     input  logic [`RCU_CLK_CFG_WIDTH-1:0] clk_cfg_i,
     output logic                          pll_lock_o,
     output logic                          pll_clk_o,
