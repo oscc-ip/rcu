@@ -19,7 +19,9 @@ module rcu_core (
     output logic                          hf_peri_clk_o
 );
 
-
+  assign pll_lock_o    = '0;
+  assign pll_clk_o     = '0;
+  assign hf_peri_clk_o = '0;
   // clock gen
   //   tech_pll u_tech_pll ();
 

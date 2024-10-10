@@ -73,6 +73,7 @@ interface rcu_if ();
   logic                           pll_en_i;
   logic [ `RCU_CLK_CFG_WIDTH-1:0] clk_cfg_i;
   logic [`RCU_CORE_SEL_WIDTH-1:0] core_sel_i;
+  logic [`RCU_CORE_SEL_WIDTH-1:0] core_sel_o;  // NOTE: now just bypass
   logic [`RCU_CLK_MODE_WIDTH-1:0] clk_o;
   logic [`RCU_CLK_MODE_WIDTH-1:0] rst_n_o;
 
@@ -85,6 +86,7 @@ interface rcu_if ();
       input pll_en_i,
       input clk_cfg_i,
       input core_sel_i,
+      output core_sel_o,
       output clk_o,
       output rst_n_o
   );
@@ -98,6 +100,7 @@ interface rcu_if ();
       output pll_en_i,
       output clk_cfg_i,
       output core_sel_i,
+      input core_sel_o,
       input clk_o,
       input rst_n_o
   );

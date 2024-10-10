@@ -37,7 +37,7 @@ task automatic RCUTest::test_reset_reg();
   super.test_reset_reg();
   // verilog_format: off
   this.rd_check(`RCU_CTRL_ADDR, "CTRL REG", 32'b0 & {`RCU_CTRL_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
-  this.rd_check(`RCU_STAT_ADDR, "STAT REG", 32'd1 & {`RCU_STAT_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
+  this.rd_check(`RCU_STAT_ADDR, "STAT REG", 32'd0 & {`RCU_STAT_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
   // verilog_format: on
 endtask
 

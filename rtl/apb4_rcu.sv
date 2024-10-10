@@ -34,8 +34,8 @@ module apb4_rcu (
   logic       s_bit_pllstrb;
 
   logic s_ext_lfosc_clk_buf, s_ext_hfosc_clk_buf, s_ext_audosc_clk_buf;
-  logic s_pll_clk, s_hf_peri_clk, s_rtc_trg, s_rtc_clk, s_sys_rstn;
-  logic s_core_4div_trg, s_core_4div;
+  logic s_pll_clk, s_hf_peri_clk, s_rtc_clk, s_sys_rstn;
+  logic s_core_4div;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -128,7 +128,7 @@ module apb4_rcu (
       .div_ready_o(),
       .div_done_o (),
       .clk_cnt_o  (),
-      .clk_trg_o  (s_rtc_trg),
+      .clk_trg_o  (),
       .clk_o      (s_rtc_clk)
   );
 
@@ -143,7 +143,8 @@ module apb4_rcu (
       .div_valid_i(1'b0),
       .div_ready_o(),
       .div_done_o (),
-      .clk_trg_o  (s_core_4div_trg),
+      .clk_cnt_o  (),
+      .clk_trg_o  (),
       .clk_o      (s_core_4div)
   );
 
@@ -158,5 +159,8 @@ module apb4_rcu (
       default:         rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_lfosc_clk_i;
     endcase
   end
+
+  // gen core sel signal
+  assign rcu.core_sel_o = rcu.core_sel_i;
 
 endmodule
