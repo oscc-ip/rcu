@@ -13,10 +13,10 @@
 
 /* register mapping
  * RCU_CTRL:
- * BITS:   | 31:2 | 1:0  |
- * FIELDS: | RES  | TCLK |
- * PERMS:  | NONE | RW   |
- * --------------------------
+ * BITS:   | 31:4 | 3:2  | 1:0  |
+ * FIELDS: | RES  | CDIV | TCLK |
+ * PERMS:  | NONE | RW   | RW   |
+ * ------------------------------
  * RCU_RDIV:
  * BITS:   | 31:0 |
  * FIELDS: | RDIV |
@@ -39,27 +39,32 @@
 `define RCU_RDIV_ADDR {26'b0, `RCU_RDIV, 2'b00}
 `define RCU_STAT_ADDR {26'b0, `RCU_STAT, 2'b00}
 
-`define RCU_CTRL_WIDTH 2
+`define RCU_CTRL_WIDTH 4
 `define RCU_RDIV_WIDTH 32
 `define RCU_STAT_WIDTH 1
 
 `define TCLK_LFOSC     2'b00
 `define TCLK_HFOSC     2'b01
 `define TCLK_AUDOSC    2'b10
-`define TCLK_CORE_4DIV 2'b11
+`define TCLK_CORE_DIV  2'b11
+
+`define TCLK_CDIV_4DIV  2'b00
+`define TCLK_CDIV_8DIV  2'b01
+`define TCLK_CDIV_16DIV 2'b10
+`define TCLK_CDIV_32DIV 2'b11
 
 // [100M -> 800M]
 `define RCU_CLK_CFG_WIDTH  3
 `define RCU_CORE_SEL_WIDTH 5
-`define RCU_CLK_MODE_WIDTH 8
+`define RCU_CLK_MODE_WIDTH 7
 // clk_o and rst_o
-`define RCU_BYPASS_CLK  6'd0
-`define RCU_CORE_CLK    6'd1
-`define RCU_LF_PERI_CLK 6'd2
-`define RCU_HF_PERI_CLK 6'd3
-`define RCU_AUD_CLK     6'd4
-`define RCU_RTC_CLK     6'd5
-`define RCU_TEST_CLK    6'd6
+`define RCU_TEST_CLK    6'd0
+`define RCU_BYPASS_CLK  6'd1
+`define RCU_CORE_CLK    6'd2
+`define RCU_LF_PERI_CLK 6'd3
+`define RCU_HF_PERI_CLK 6'd4
+`define RCU_AUD_CLK     6'd5
+`define RCU_RTC_CLK     6'd6
 // verilog_format: on
 
 `define RCU_RDIV_MIN_VAL {{(`RCU_RDIV_WIDTH-2){1'b0}}, 2'd2}

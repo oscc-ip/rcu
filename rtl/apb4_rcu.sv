@@ -30,12 +30,13 @@ module apb4_rcu (
   logic [`RCU_RDIV_WIDTH-1:0] s_rcu_rdiv_d, s_rcu_rdiv_q;
   logic s_rcu_rdiv_en;
   logic [`RCU_STAT_WIDTH-1:0] s_rcu_stat_d, s_rcu_stat_q;
-  logic [1:0] s_bit_tclk;
-  logic       s_bit_pllstrb;
+  logic [1:0] s_bit_tclk, s_bit_cdiv;
+  logic s_bit_pllstrb;
 
   logic s_ext_lfosc_clk_buf, s_ext_hfosc_clk_buf, s_ext_audosc_clk_buf;
   logic s_pll_clk, s_hf_peri_clk, s_rtc_clk, s_sys_rstn;
-  logic s_core_4div;
+  logic s_core_4div_clk, s_core_div_clk;
+  logic [7:0] s_core_div_val;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -44,6 +45,7 @@ module apb4_rcu (
   assign apb4.pslverr    = 1'b0;
 
   assign s_bit_tclk      = s_rcu_ctrl_q[1:0];
+  assign s_bit_cdiv      = s_rcu_ctrl_q[3:2];
 
   assign s_rcu_ctrl_en   = s_apb4_wr_hdshk && s_apb4_addr == `RCU_CTRL;
   assign s_rcu_ctrl_d    = apb4.pwdata[`RCU_CTRL_WIDTH-1:0];
@@ -93,15 +95,18 @@ module apb4_rcu (
   clk_buf u_ext_hfosc_clk_buf     (.clk_i(rcu.ext_hfosc_clk_i), .clk_o(s_ext_hfosc_clk_buf));
   clk_buf u_ext_audosc_clk_buf    (.clk_i(rcu.ext_audosc_clk_i), .clk_o(s_ext_audosc_clk_buf));
   clk_mux2 u_core_clk_clk_mux2    (.clk_o(rcu.clk_o[`RCU_CORE_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_pll_clk), .en_i(rcu.pll_en_i));
-  clk_mux2 u_lf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_LF_PERI_CLK]), .clk1_i(s_core_4div), .clk2_i(s_ext_lfosc_clk_buf), .en_i(rcu.pll_en_i));
+  clk_mux2 u_lf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_LF_PERI_CLK]), .clk1_i(s_core_4div_clk), .clk2_i(s_ext_lfosc_clk_buf), .en_i(rcu.pll_en_i));
   clk_mux2 u_hf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_HF_PERI_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_hf_peri_clk), .en_i(rcu.pll_en_i));
   // verilog_format: on
+
   assign rcu.clk_o[`RCU_BYPASS_CLK] = s_ext_lfosc_clk_buf;
   assign rcu.clk_o[`RCU_AUD_CLK]    = rcu.ext_audosc_clk_i;
   assign rcu.clk_o[`RCU_RTC_CLK]    = s_rtc_clk;
   assign s_sys_rstn                 = rcu.ext_rst_n_i | rcu.wdt_rst_n_i;
-  for (genvar i = 0; i < 6; i++) begin : RCU_RST_BLOCK
-    rst_sync #(3) u__rst_sync (
+
+  // syn reset signal
+  for (genvar i = 1; i < `RCU_CLK_MODE_WIDTH; i++) begin : RCU_RST_BLOCK
+    rst_sync #(3) u_rst_sync (
         rcu.clk_o[i],
         s_sys_rstn,
         rcu.rst_n_o[i]
@@ -122,15 +127,17 @@ module apb4_rcu (
       .DIV_VALUE_WIDTH (`RCU_RDIV_WIDTH),
       .DONE_DELAY_WIDTH(3)
   ) u_rtcdiv_clk_int_div_simple (
-      .clk_i      (rcu.clk_o[`RCU_AUD_CLK]),
-      .rst_n_i    (rcu.rst_n_o[`RCU_AUD_CLK]),
-      .div_i      (s_rcu_rdiv_q),
-      .div_valid_i(s_rcu_rdiv_en),
-      .div_ready_o(),
-      .div_done_o (),
-      .clk_cnt_o  (),
-      .clk_trg_o  (),
-      .clk_o      (s_rtc_clk)
+      .clk_i        (rcu.clk_o[`RCU_AUD_CLK]),
+      .rst_n_i      (rcu.rst_n_o[`RCU_AUD_CLK]),
+      .div_i        (s_rcu_rdiv_q),
+      .clk_init_i   (1'b0),
+      .div_valid_i  (s_rcu_rdiv_en),
+      .div_ready_o  (),
+      .div_done_o   (),
+      .clk_cnt_o    (),
+      .clk_fir_trg_o(),
+      .clk_sec_trg_o(),
+      .clk_o        (s_rtc_clk)
   );
 
   // core 4div
@@ -138,26 +145,56 @@ module apb4_rcu (
       .DIV_VALUE_WIDTH (3),
       .DONE_DELAY_WIDTH(3)
   ) u_core4div_clk_int_div_simple (
-      .clk_i      (rcu.clk_o[`RCU_CORE_CLK]),
-      .rst_n_i    (rcu.rst_n_o[`RCU_CORE_CLK]),
-      .div_i      (3'd3),
-      .div_valid_i(1'b0),
-      .div_ready_o(),
-      .div_done_o (),
-      .clk_cnt_o  (),
-      .clk_trg_o  (),
-      .clk_o      (s_core_4div)
+      .clk_i        (rcu.clk_o[`RCU_CORE_CLK]),
+      .rst_n_i      (rcu.rst_n_o[`RCU_CORE_CLK]),
+      .div_i        (3'd3),
+      .clk_init_i   (1'b0),
+      .div_valid_i  (1'b0),
+      .div_ready_o  (),
+      .div_done_o   (),
+      .clk_cnt_o    (),
+      .clk_fir_trg_o(),
+      .clk_sec_trg_o(),
+      .clk_o        (s_core_4div_clk)
   );
 
-  // clock out
+
+
+  always_comb begin
+    s_core_div_val = 8'd3;
+    unique case (s_bit_cdiv)
+      `TCLK_CDIV_4DIV:  s_core_div_val = 8'd3;
+      `TCLK_CDIV_8DIV:  s_core_div_val = 8'd7;
+      `TCLK_CDIV_16DIV: s_core_div_val = 8'd15;
+      `TCLK_CDIV_32DIV: s_core_div_val = 8'd31;
+    endcase
+  end
+  clk_int_div_simple #(
+      .DIV_VALUE_WIDTH (8),
+      .DONE_DELAY_WIDTH(3)
+  ) u_core_clk_int_div_simple (
+      .clk_i        (rcu.clk_o[`RCU_CORE_CLK]),
+      .rst_n_i      (rcu.rst_n_o[`RCU_CORE_CLK]),
+      .div_i        (s_core_div_val),
+      .clk_init_i   (1'b0),
+      .div_valid_i  (1'b0),
+      .div_ready_o  (),
+      .div_done_o   (),
+      .clk_cnt_o    (),
+      .clk_fir_trg_o(),
+      .clk_sec_trg_o(),
+      .clk_o        (s_core_div_clk)
+  );
+
+  // test clock out
   always_comb begin
     rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_lfosc_clk_i;
     unique case (s_bit_tclk)
-      `TCLK_LFOSC:     rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_lfosc_clk_i;
-      `TCLK_HFOSC:     rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_hfosc_clk_i;
-      `TCLK_AUDOSC:    rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_audosc_clk_i;
-      `TCLK_CORE_4DIV: rcu.clk_o[`RCU_TEST_CLK] = s_core_4div;
-      default:         rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_lfosc_clk_i;
+      `TCLK_LFOSC:    rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_lfosc_clk_i;
+      `TCLK_HFOSC:    rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_hfosc_clk_i;
+      `TCLK_AUDOSC:   rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_audosc_clk_i;
+      `TCLK_CORE_DIV: rcu.clk_o[`RCU_TEST_CLK] = s_core_div_clk;
+      default:        rcu.clk_o[`RCU_TEST_CLK] = rcu.ext_lfosc_clk_i;
     endcase
   end
 
