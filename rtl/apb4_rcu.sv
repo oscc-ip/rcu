@@ -128,12 +128,12 @@ module apb4_rcu (
   end
 
   rcu_core u_rcu_core (
-      .ref_clk_i    (s_ext_lfosc_clk_buf),
-      .pll_en_i     (rcu.pll_en_i),
-      .clk_cfg_i    (rcu.clk_cfg_i),
-      .pll_lock_o   (s_bit_pllstrb),
-      .pll_clk_o    (s_pll_core_clk),
-      .hf_peri_clk_o(s_pll_hf_peri_clk)
+      .ref_clk_i        (s_ext_lfosc_clk_buf),
+      .pll_en_i         (rcu.pll_en_i),
+      .clk_cfg_i        (rcu.clk_cfg_i),
+      .pll_lock_o       (s_bit_pllstrb),
+      .pll_core_clk_o   (s_pll_core_clk),
+      .pll_hf_peri_clk_o(s_pll_hf_peri_clk)
   );
 
   // rtc div
