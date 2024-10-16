@@ -114,7 +114,7 @@ module apb4_rcu (
     if (i == `RCU_CORE_CLK || i == `RCU_HF_PERI_CLK) begin
       rst_sync #(4) u_rst_pllpost_sync (
           rcu.clk_o[i],
-          rcu.pll_en_i ? s_bit_clklock : s_sys_rstn,
+          rcu.pll_en_i ? s_bit_clklock && s_sys_rstn : s_sys_rstn,
           rcu.rst_n_o[i]
       );
     end else begin
