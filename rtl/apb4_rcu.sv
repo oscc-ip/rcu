@@ -36,7 +36,7 @@ module apb4_rcu (
   logic s_core_4div_clk, s_core_div_clk;
   logic [7:0] s_core_div_val;
   // pll clk
-  logic s_pll_core_clk, s_pll_hf_peri_clk, s_pll_clk_postdiv;
+  logic s_pll_core_clk, s_pll_hf_peri_clk, s_pll_clk;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -131,8 +131,8 @@ module apb4_rcu (
       .pll_en_i         (rcu.pll_en_i),
       .clk_cfg_i        (rcu.clk_cfg_i),
       .pll_lock_o       (s_bit_clklock),
-      .pll_clk_o        (s_pll_core_clk),
-      .pll_clk_postdiv_o(s_pll_clk_postdiv)
+      .pll_clk_o        (s_pll_clk),
+      .pll_clk_postdiv_o(s_pll_core_clk)
   );
 
   // rtc div
@@ -204,6 +204,6 @@ module apb4_rcu (
   // === CUSTOM CLK DESIGN AREA ===
   // gen core sel signal
   assign rcu.core_sel_o    = rcu.core_sel_i;
-  assign s_pll_hf_peri_clk = s_pll_clk_postdiv;
+  assign s_pll_hf_peri_clk = s_pll_clk;
 
 endmodule
