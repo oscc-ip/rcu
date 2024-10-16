@@ -67,9 +67,13 @@
 `define RCU_RTC_CLK        6
 // `define RCU_CUST0_CLK
 // `define RCU_CUST1_CLK
-
 // verilog_format: on
 
+// add custom pll core postdiv clk
+// 1. define new clk here
+// 2. modify rcu_core module port with new clk
+// 3. add bypass clk mux
+// 4. add bypass rst mux
 interface rcu_if ();
   logic                           ext_lfosc_clk_i;
   logic                           ext_hfosc_clk_i;

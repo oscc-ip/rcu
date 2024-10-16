@@ -34,7 +34,8 @@ module apb4_rcu (
   logic s_bit_pllstrb;
 
   logic s_ext_lfosc_clk_buf, s_ext_hfosc_clk_buf, s_ext_audosc_clk_buf;
-  logic s_pll_clk, s_hf_peri_clk, s_rtc_clk, s_sys_rstn;
+  logic s_rtc_clk, s_sys_rstn;
+  logic s_pll_core_clk, s_pll_hf_peri_clk;
   logic s_core_4div_clk, s_core_div_clk;
   logic [7:0] s_core_div_val;
 
@@ -91,12 +92,15 @@ module apb4_rcu (
 
   // gen clock and reset signal
   // verilog_format: off
-  clk_buf u_ext_lfosc_clk_buf     (.clk_i(rcu.ext_lfosc_clk_i), .clk_o(s_ext_lfosc_clk_buf));
-  clk_buf u_ext_hfosc_clk_buf     (.clk_i(rcu.ext_hfosc_clk_i), .clk_o(s_ext_hfosc_clk_buf));
+  clk_buf u_ext_lfosc_clk_buf     (.clk_i(rcu.ext_lfosc_clk_i),  .clk_o(s_ext_lfosc_clk_buf));
+  clk_buf u_ext_hfosc_clk_buf     (.clk_i(rcu.ext_hfosc_clk_i),  .clk_o(s_ext_hfosc_clk_buf));
   clk_buf u_ext_audosc_clk_buf    (.clk_i(rcu.ext_audosc_clk_i), .clk_o(s_ext_audosc_clk_buf));
-  clk_mux2 u_core_clk_clk_mux2    (.clk_o(rcu.clk_o[`RCU_CORE_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_pll_clk), .en_i(rcu.pll_en_i));
+  // pll core postdiv clk
+  clk_mux2 u_core_clk_clk_mux2    (.clk_o(rcu.clk_o[`RCU_CORE_CLK]),    .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_pll_core_clk),    .en_i(rcu.pll_en_i));
+  clk_mux2 u_hf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_HF_PERI_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_pll_hf_peri_clk), .en_i(rcu.pll_en_i));
+  // === add more pll core postdiv clk here ===
+  // other clk
   clk_mux2 u_lf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_LF_PERI_CLK]), .clk1_i(s_core_4div_clk), .clk2_i(s_ext_lfosc_clk_buf), .en_i(rcu.pll_en_i));
-  clk_mux2 u_hf_peri_clk_clk_mux2 (.clk_o(rcu.clk_o[`RCU_HF_PERI_CLK]), .clk1_i(s_ext_lfosc_clk_buf), .clk2_i(s_hf_peri_clk), .en_i(rcu.pll_en_i));
   // verilog_format: on
 
   assign rcu.clk_o[`RCU_BYPASS_CLK] = s_ext_lfosc_clk_buf;
@@ -105,13 +109,22 @@ module apb4_rcu (
   assign s_sys_rstn                 = rcu.ext_rst_n_i | rcu.wdt_rst_n_i;
 
   // syn reset signal
-  assign rcu.rst_n_o[0]             = '0;
+  assign rcu.rst_n_o[0]             = '0;  // no used
   for (genvar i = 1; i < `RCU_CLK_MODE_WIDTH; i++) begin : RCU_RST_BLOCK
-    rst_sync #(3) u_rst_sync (
-        rcu.clk_o[i],
-        s_sys_rstn,
-        rcu.rst_n_o[i]
-    );
+    // === add more pll core postdiv clk here ===
+    if (i == `RCU_CORE_CLK || i == `RCU_HF_PERI_CLK) begin
+      rst_sync #(4) u_rst_pllpost_sync (
+          rcu.clk_o[i],
+          rcu.pll_en_i ? s_bit_pllstrb : s_sys_rstn,
+          rcu.rst_n_o[i]
+      );
+    end else begin
+      rst_sync #(4) u_rst_freeclk_sync (
+          rcu.clk_o[i],
+          s_sys_rstn,
+          rcu.rst_n_o[i]
+      );
+    end
   end
 
   rcu_core u_rcu_core (
@@ -119,8 +132,8 @@ module apb4_rcu (
       .pll_en_i     (rcu.pll_en_i),
       .clk_cfg_i    (rcu.clk_cfg_i),
       .pll_lock_o   (s_bit_pllstrb),
-      .pll_clk_o    (s_pll_clk),
-      .hf_peri_clk_o(s_hf_peri_clk)
+      .pll_clk_o    (s_pll_core_clk),
+      .hf_peri_clk_o(s_pll_hf_peri_clk)
   );
 
   // rtc div
