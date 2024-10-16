@@ -16,13 +16,13 @@ module rcu_core (
     input  logic                          pll_en_i,
     input  logic [`RCU_CLK_CFG_WIDTH-1:0] clk_cfg_i,
     output logic                          pll_lock_o,
-    output logic                          pll_core_clk_o,
-    output logic                          pll_hf_peri_clk_o
+    output logic                          pll_clk_o,
+    output logic                          pll_clk_postdiv_o
 );
 
   assign pll_lock_o        = 1'b0;
-  assign pll_core_clk_o    = 1'b0;
-  assign pll_hf_peri_clk_o = ref_clk_i;
+  assign pll_clk_o         = ref_clk_i;
+  assign pll_clk_postdiv_o = ref_clk_i;
   // clock gen
   //   tech_pll u_tech_pll ();
 

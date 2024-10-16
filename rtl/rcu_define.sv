@@ -21,12 +21,12 @@
  * BITS:   | 31:0 |
  * FIELDS: | RDIV |
  * PERMS:  | RW   |
- * --------------------------
+ * ------------------------------
  * RCU_STAT:
  * BITS:   | 31:1 | 0       |
- * FIELDS: | RES  | PLLSTRB |
+ * FIELDS: | RES  | CLKLOCK |
  * PERMS:  | NONE | RO      |
- * --------------------------
+ * ------------------------------
 */
 
 // verilog_format: off
@@ -53,7 +53,6 @@
 `define TCLK_CDIV_16DIV 2'b10
 `define TCLK_CDIV_32DIV 2'b11
 
-// [100M -> 800M]
 `define RCU_CLK_CFG_WIDTH  3
 `define RCU_CORE_SEL_WIDTH 5
 `define RCU_CLK_MODE_WIDTH 7
