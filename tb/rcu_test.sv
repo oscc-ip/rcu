@@ -23,6 +23,7 @@ class RCUTest extends APB4Master;
   extern function new(string name = "rcu_test", virtual apb4_if.master apb4, virtual rcu_if.tb rcu);
   extern task automatic test_reset_reg();
   extern task automatic test_wr_rd_reg(input bit [31:0] run_times = 1000);
+  extern task automatic test_core_div();
 endclass
 
 function RCUTest::new(string name, virtual apb4_if.master apb4, virtual rcu_if.tb rcu);
@@ -50,4 +51,26 @@ task automatic RCUTest::test_wr_rd_reg(input bit [31:0] run_times = 1000);
   // verilog_format: on
 endtask
 
+task automatic RCUTest::test_core_div();
+  bit [31:0] ctrl_val = '0;
+  $display("%t === [test core div] ===", $time);
+  repeat (400) @(posedge this.apb4.pclk);
+  ctrl_val[1:0] = 2'd3;
+  ctrl_val[3:2] = 2'd0;
+  this.write(`RCU_CTRL_ADDR, ctrl_val);  // div4
+  repeat (400) @(posedge this.apb4.pclk);
+
+  ctrl_val[3:2] = 2'd1;
+  this.write(`RCU_CTRL_ADDR, ctrl_val);  // div8
+  repeat (400) @(posedge this.apb4.pclk);
+
+  ctrl_val[3:2] = 2'd2;
+  this.write(`RCU_CTRL_ADDR, ctrl_val);  // div16
+  repeat (400) @(posedge this.apb4.pclk);
+
+  ctrl_val[3:2] = 2'd3;
+  this.write(`RCU_CTRL_ADDR, ctrl_val);  // div32
+  repeat (400) @(posedge this.apb4.pclk);
+
+endtask
 `endif

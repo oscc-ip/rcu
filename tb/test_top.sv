@@ -38,6 +38,7 @@ program automatic test_top (
     rcu_hdl.init();
     rcu_hdl.test_reset_reg();
     rcu_hdl.test_wr_rd_reg();
+    rcu_hdl.test_core_div();
 
     Helper::end_banner();
     #20000 $finish;
