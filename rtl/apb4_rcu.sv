@@ -60,7 +60,7 @@ module apb4_rcu (
 
   assign s_rcu_rdiv_en = s_apb4_wr_hdshk && s_apb4_addr == `RCU_RDIV;
   assign s_rcu_rdiv_d  = apb4.pwdata[`RCU_RDIV_WIDTH-1:0];
-  dfferh #(`RCU_RDIV_WIDTH) u_rcu_rdiv_dfferh (
+  dffer #(`RCU_RDIV_WIDTH) u_rcu_rdiv_dffer (
       apb4.pclk,
       apb4.presetn,
       s_rcu_rdiv_en,
@@ -186,7 +186,7 @@ module apb4_rcu (
   clk_int_div_simple #(
       .DIV_VALUE_WIDTH (8),
       .DONE_DELAY_WIDTH(3)
-  ) u_core_clk_int_div_simple (
+  ) u_corediv_clk_int_div_simple (
       .clk_i        (rcu.clk_o[`RCU_CORE_CLK]),
       .rst_n_i      (rcu.rst_n_o[`RCU_CORE_CLK]),
       .div_i        (s_core_div_val),

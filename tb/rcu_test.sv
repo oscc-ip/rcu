@@ -24,6 +24,7 @@ class RCUTest extends APB4Master;
   extern task automatic test_reset_reg();
   extern task automatic test_wr_rd_reg(input bit [31:0] run_times = 1000);
   extern task automatic test_core_div();
+  extern task automatic test_rtc_div();
 endclass
 
 function RCUTest::new(string name, virtual apb4_if.master apb4, virtual rcu_if.tb rcu);
@@ -73,4 +74,14 @@ task automatic RCUTest::test_core_div();
   repeat (400) @(posedge this.apb4.pclk);
 
 endtask
+
+task automatic RCUTest::test_rtc_div();
+  bit [31:0] rdiv_val = '0;
+  $display("%t === [test rtc div] ===", $time);
+  repeat (400) @(posedge this.apb4.pclk);
+  rdiv_val = 32'd7; // div4 org_clk: 12288K
+  this.write(`RCU_RDIV_ADDR, rdiv_val);
+  repeat (400) @(posedge this.apb4.pclk);
+endtask
+
 `endif
