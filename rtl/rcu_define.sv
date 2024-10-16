@@ -58,16 +58,17 @@
 `define RCU_CORE_SEL_WIDTH 5
 `define RCU_CLK_MODE_WIDTH 7
 // clk_o and rst_o
-`define RCU_TEST_CLK    6'd0
-`define RCU_BYPASS_CLK  6'd1
-`define RCU_CORE_CLK    6'd2
-`define RCU_LF_PERI_CLK 6'd3
-`define RCU_HF_PERI_CLK 6'd4
-`define RCU_AUD_CLK     6'd5
-`define RCU_RTC_CLK     6'd6
-// verilog_format: on
+`define RCU_TEST_CLK       0
+`define RCU_BYPASS_CLK     1
+`define RCU_CORE_CLK       2
+`define RCU_LF_PERI_CLK    3
+`define RCU_HF_PERI_CLK    4
+`define RCU_AUD_CLK        5
+`define RCU_RTC_CLK        6
+// `define RCU_CUST0_CLK
+// `define RCU_CUST1_CLK
 
-`define RCU_RDIV_MIN_VAL {{(`RCU_RDIV_WIDTH-2){1'b0}}, 2'd2}
+// verilog_format: on
 
 interface rcu_if ();
   logic                           ext_lfosc_clk_i;

@@ -105,6 +105,7 @@ module apb4_rcu (
   assign s_sys_rstn                 = rcu.ext_rst_n_i | rcu.wdt_rst_n_i;
 
   // syn reset signal
+  assign rcu.rst_n_o[0]             = '0;
   for (genvar i = 1; i < `RCU_CLK_MODE_WIDTH; i++) begin : RCU_RST_BLOCK
     rst_sync #(3) u_rst_sync (
         rcu.clk_o[i],
