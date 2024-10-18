@@ -83,6 +83,7 @@ module apb4_rcu (
     if (s_apb4_rd_hdshk) begin
       unique case (s_apb4_addr)
         `RCU_CTRL: apb4.prdata[`RCU_CTRL_WIDTH-1:0] = s_rcu_ctrl_q;
+        `RCU_RDIV: apb4.prdata[`RCU_RDIV_WIDTH-1:0] = s_rcu_rdiv_q;
         `RCU_STAT: apb4.prdata[`RCU_STAT_WIDTH-1:0] = s_rcu_stat_q;
         default:   apb4.prdata = '0;
       endcase
